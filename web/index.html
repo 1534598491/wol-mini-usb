@@ -272,8 +272,10 @@
     </style>
 </head>
 <body>
-    <!-- ESP Web Flasher -->
-    <script type="module" src="https://unpkg.com/esp-web-tools@9.4.2/dist/web/index.js?module"></script>
+    <!-- ESP Web Tools - 浏览器烧录固件 -->
+    <script type="module">
+        import 'https://unpkg.com/esp-web-tools@9.4.2/dist/web/index.js';
+    </script>
     <!-- 登录界面 -->
     <div id="loginPage">
         <div class="ios-container">
@@ -304,8 +306,8 @@
                     <span style="color:#f59e0b">⚠️ 需要Chrome/Edge浏览器(89+版本)</span>
                 </p>
                 <!-- 使用官方ESP Web Tools组件 -->
-                <esp-web-install-button manifest="firmware/manifest.json">
-                    <button slot="activate" class="ios-btn ios-btn-flash">⚡ 浏览器烧录固件</button>
+                <esp-web-install-button manifest="./firmware/manifest.json">
+                    <button slot="activate" class="ios-btn ios-btn-flash" style="width:100%">⚡ 浏览器烧录固件</button>
                 </esp-web-install-button>
                 <div id="flashResult" class="flash-progress hidden">
                     <div class="flash-status" id="flashStatus"></div>
