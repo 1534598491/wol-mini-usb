@@ -580,7 +580,7 @@ void handleConfigRoot() {
   html += F("fetch('/verify_activation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code})})");
   html += F(".then(r=>r.json()).then(d=>{");
   html += F("if(d.valid){");
-  html += F("document.getElementById('activation_result').innerHTML='<p style=\"color:#22c55e;font-weight:bold\">✅ 验证成功！激活码正确</p>';}");
+  html += F("document.getElementById('activation_result').innerHTML='<p style=\"color:#22c55e;font-weight:bold\">✅ 验证成功！激活码正确</p>';");
   html += F("}else{");
   html += F("document.getElementById('activation_result').innerHTML='<p style=\"color:#ef4444;font-weight:bold\">❌ 验证失败！激活码不匹配此设备</p><p style=\"color:#f59e0b;font-size:11px\">提示：激活码与MAC地址绑定，请检查是否输入正确</p>';}");
   html += F("}}).catch(e=>{document.getElementById('activation_result').innerHTML='<p style=\"color:#ef4444\">验证失败:'+e+'</p>';});}");
