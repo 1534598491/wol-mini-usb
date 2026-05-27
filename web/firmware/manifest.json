@@ -4,8 +4,16 @@
   "chipFamily": "ESP32-S3",
   "parts": [
     {
-      "path": "firmware.bin",
+      "path": "bootloader.bin",
       "offset": 0
+    },
+    {
+      "path": "partitions.bin",
+      "offset": 32768
+    },
+    {
+      "path": "firmware.bin",
+      "offset": 65536
     }
   ],
   "description": "即插即用远程唤醒/睡眠方案固件"

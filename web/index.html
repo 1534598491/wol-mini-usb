@@ -273,11 +273,7 @@
 </head>
 <body>
     <!-- ESP Web Flasher -->
-    <script type="module">
-        // 使用esp-web-flasher库
-        import { EspLoader } from 'https://unpkg.com/esp-web-flasher@5.1.0/dist/web/index.js';
-        window.EspLoader = EspLoader;
-    </script>
+    <script type="module" src="https://unpkg.com/esp-web-tools@9.4.2/dist/web/index.js?module"></script>
     <!-- 登录界面 -->
     <div id="loginPage">
         <div class="ios-container">
@@ -304,14 +300,15 @@
                     <div class="card-title">烧录固件</div>
                 </div>
                 <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:12px">
-                    通过USB直接烧录固件到ESP32-S3，无需安装任何软件
+                    通过USB直接烧录固件到ESP32-S3，无需安装任何软件<br>
+                    <span style="color:#f59e0b">⚠️ 需要Chrome/Edge浏览器(89+版本)</span>
                 </p>
-                <button class="ios-btn ios-btn-flash" onclick="startFlash()">⚡ 浏览器烧录固件</button>
-                <div id="flashProgress" class="flash-progress hidden">
-                    <div class="flash-progress-bar">
-                        <div class="flash-progress-fill" id="flashProgressBar" style="width:0%"></div>
-                    </div>
-                    <div class="flash-status" id="flashStatus">准备烧录...</div>
+                <!-- 使用官方ESP Web Tools组件 -->
+                <esp-web-install-button manifest="firmware/manifest.json">
+                    <button slot="activate" class="ios-btn ios-btn-flash">⚡ 浏览器烧录固件</button>
+                </esp-web-install-button>
+                <div id="flashResult" class="flash-progress hidden">
+                    <div class="flash-status" id="flashStatus"></div>
                 </div>
             </div>
 
@@ -401,71 +398,6 @@
         const MQTT_BROKER = 'wss://broker-cn.emqx.io:8084/mqtt';
         let currentDevice = { id: '', token: '' };
         let mqttClient = null;
-
-        // ===== 浏览器烧录功能 =====
-        async function startFlash() {
-            // 检查浏览器是否支持Web Serial
-            if (!('serial' in navigator)) {
-                alert('您的浏览器不支持Web Serial API\n请使用Chrome/Edge浏览器（版本89+）');
-                return;
-            }
-
-            const progressDiv = document.getElementById('flashProgress');
-            const progressBar = document.getElementById('flashProgressBar');
-            const statusText = document.getElementById('flashStatus');
-            const flashBtn = document.target || document.activeElement;
-
-            progressDiv.classList.remove('hidden');
-            flashBtn.disabled = true;
-            statusText.style.color = 'rgba(255,255,255,0.7)';
-            statusText.textContent = '请选择ESP32串口设备...';
-
-            try {
-                // 请求串口权限
-                const port = await navigator.serial.requestPort();
-                statusText.textContent = '正在连接ESP32...';
-                progressBar.style.width = '10%';
-
-                // 创建EspLoader实例
-                const loader = new window.EspLoader(port);
-                await loader.connect();
-
-                statusText.textContent = '正在同步...（如失败请按住BOOT按钮）';
-                progressBar.style.width = '20%';
-
-                // 获取固件文件
-                const firmwareUrl = window.location.href.replace('index.html', '') + 'firmware/firmware.bin';
-                statusText.textContent = '正在下载固件...';
-                progressBar.style.width = '30%';
-
-                const response = await fetch(firmwareUrl);
-                const firmwareData = await response.arrayBuffer();
-
-                statusText.textContent = '正在写入Flash...';
-                progressBar.style.width = '40%';
-
-                // 写入固件到地址 0x10000
-                await loader.writeFlash(0x10000, new Uint8Array(firmwareData), (progress) => {
-                    const percent = 40 + Math.round(progress * 50);
-                    progressBar.style.width = percent + '%';
-                    statusText.textContent = '写入进度: ' + Math.round(progress * 100) + '%';
-                });
-
-                progressBar.style.width = '100%';
-                statusText.textContent = '✅ 烧录成功！请重新插拔ESP32';
-                statusText.style.color = '#22c55e';
-
-                // 断开连接
-                await loader.disconnect();
-
-            } catch (err) {
-                statusText.textContent = '❌ 烧录失败: ' + err.message;
-                statusText.style.color = '#ef4444';
-                console.error('Flash error:', err);
-            }
-
-            flashBtn.disabled = false;
-        }
 
         function login() {
             currentDevice.id = document.getElementById('deviceId').value.trim();
