@@ -305,6 +305,19 @@
                 <p style="font-size:12px;color:#22c55e;margin-bottom:8px">
                     ✅ Chrome/Edge浏览器(89+) 已支持
                 </p>
+                <!-- 版本选择 -->
+                <div class="ios-input-group" style="margin-bottom:8px">
+                    <label class="ios-label">选择固件版本</label>
+                    <select class="ios-input" id="firmwareVersion" onchange="updateManifest()">
+                        <option value="v1.0">v1.0 (最新稳定版)</option>
+                    </select>
+                </div>
+                <div class="ios-input-group" style="margin-bottom:8px">
+                    <label class="ios-label">选择板子型号</label>
+                    <select class="ios-input" id="boardType">
+                        <option value="esp32-s3">ESP32-S3 DevKit (推荐)</option>
+                    </select>
+                </div>
                 <!-- 弹窗英文翻译说明 -->
                 <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:rgba(255,255,255,0.7)">
                     <b style="color:#3b82f6">弹窗英文说明：</b><br>
@@ -314,7 +327,7 @@
                     • <b>Success!</b> = 烧录成功
                 </div>
                 <!-- 使用官方ESP Web Tools组件 -->
-                <esp-web-install-button manifest="./firmware/manifest.json">
+                <esp-web-install-button id="flashButton" manifest="./firmware/manifest.json">
                     <button slot="activate" class="ios-btn ios-btn-flash" style="width:100%">⚡ 浏览器烧录固件</button>
                 </esp-web-install-button>
             </div>
@@ -482,6 +495,8 @@
                 html += '<div class="device-info-row"><span class="device-info-label">设备ID</span><span class="device-info-value">' + msg.device_id + '</span></div>';
                 html += '<div class="device-info-row"><span class="device-info-label">状态</span><span class="status-pill status-online"><span class="status-dot"></span>在线</span></div>';
                 if (msg.ip) html += '<div class="device-info-row"><span class="device-info-label">IP</span><span class="device-info-value">' + msg.ip + '</span></div>';
+                if (msg.firmware_version) html += '<div class="device-info-row"><span class="device-info-label">固件版本</span><span class="device-info-value">' + msg.firmware_version + '</span></div>';
+                if (msg.firmware_date) html += '<div class="device-info-row"><span class="device-info-label">固件日期</span><span class="device-info-value">' + msg.firmware_date + '</span></div>';
                 html += '</div>';
                 document.getElementById('statusDisplay').innerHTML = html;
             }

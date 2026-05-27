@@ -22,7 +22,8 @@
 #include <USBHIDKeyboard.h>
 #include <USBHIDSystemControl.h>
 
-// BOOT按键配置
+const char* FIRMWARE_VERSION = "1.0.0";
+const char* FIRMWARE_DATE = "2026-05-27";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
 #define WIFI_RECONNECT_DELAY 5000
@@ -655,6 +656,8 @@ void sendHeartbeat() {
   doc["ip"] = WiFi.localIP().toString();
   doc["timestamp"] = millis() / 1000;
   doc["usb_hid"] = "ready";
+  doc["firmware_version"] = FIRMWARE_VERSION;
+  doc["firmware_date"] = FIRMWARE_DATE;
 
   String msg;
   serializeJson(doc, msg);
