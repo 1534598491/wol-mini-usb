@@ -467,7 +467,7 @@ void handleConfigRoot() {
 
   html += F("<div class='container'>");
   html += F("<h1>WOL-Mini-USB</h1>");
-  html += F("<p class='subtitle'>即插即用远程唤醒/睡眠</p>");
+  html += "<p class='subtitle'>v" + String(FIRMWARE_VERSION) + " | " + String(FIRMWARE_DATE) + "</p>";
 
   // 使用说明
   html += F("<div class='info-box'>");
