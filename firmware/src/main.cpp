@@ -21,6 +21,7 @@
 #include <USB.h>
 #include <USBHIDKeyboard.h>
 #include <USBHIDSystemControl.h>
+#include "mbedtls/sha256.h"
 
 const char* FIRMWARE_VERSION = "1.0.0";
 const char* FIRMWARE_DATE = "2026-05-27";
@@ -212,26 +213,56 @@ void saveConfig() {
 
 // ===== 激活码验证 =====
 
+// 密钥（与Python脚本保持一致）
+const char* ACTIVATION_SECRET = "WOL-MINI-USB-2024-SECRET";
+
 bool validateActivationCode(String code) {
-  // 激活码格式：XXXX-XXXX-XXXX（12位字母数字）
-  // 示例：A1B2-C3D4-E5F6
-  if (code.length() != 14) return false;  // 12字符 + 2个分隔符
+  // 激活码格式：XXXX-XXXX-XXXX（12位十六进制）
+  if (code.length() != 14) return false;
 
   // 检查格式：XXXX-XXXX-XXXX
   if (code.charAt(4) != '-' || code.charAt(9) != '-') return false;
 
-  // 检查每段是否为有效字符
+  // 检查每段是否为有效十六进制字符
   for (int i = 0; i < 14; i++) {
-    if (i == 4 || i == 9) continue;  // 跳过分隔符
+    if (i == 4 || i == 9) continue;
     char c = code.charAt(i);
-    if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))) return false;
+    if (!((c >= 'A' && c <= 'F') || (c >= '0' && c <= '9'))) return false;
   }
 
-  // 这里可以添加更严格的验证逻辑
-  // 例如：与预设的激活码列表匹配，或与MAC地址绑定
+  // 基于MAC地址验证激活码
+  String mac = WiFi.macAddress();
+  mac.replace(":", "");
+  mac.toUpperCase();
 
-  // 简化版：格式正确即视为有效
-  return true;
+  // 组合MAC和密钥
+  String data = mac + String(ACTIVATION_SECRET);
+
+  // SHA256哈希（ESP32硬件支持）
+  uint8_t hash[32];
+  mbedtls_sha256_context sha_ctx;
+  mbedtls_sha256_init(&sha_ctx);
+  mbedtls_sha256_starts(&sha_ctx, false);  // false = SHA256 (not SHA224)
+  mbedtls_sha256_update(&sha_ctx, (uint8_t*)data.c_str(), data.length());
+  mbedtls_sha256_finish(&sha_ctx, hash);
+  mbedtls_sha256_free(&sha_ctx);
+
+  // 将哈希转换为十六进制字符串，取前12位
+  String expectedCode = "";
+  for (int i = 0; i < 6; i++) {
+    char hex[3];
+    sprintf(hex, "%02X", hash[i]);
+    expectedCode += hex;
+  }
+
+  // 格式化期望的激活码
+  String expectedFormatted = expectedCode.substring(0, 4) + "-" +
+                             expectedCode.substring(4, 8) + "-" +
+                             expectedCode.substring(8, 12);
+
+  // 对比输入的激活码和期望的激活码
+  code.toUpperCase();
+  return code == expectedFormatted;
 }
 
 bool checkActivation() {
