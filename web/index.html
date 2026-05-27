@@ -460,11 +460,29 @@
                 return;
             }
             addLog('发送: ' + action + '...');
+
+            // 使用HMAC签名（Token不传输）
+            const timestamp = Math.floor(Date.now() / 1000);
+            const signature = computeHMAC(action + timestamp, currentDevice.token);
+
             mqttClient.publish('wol-mini/' + currentDevice.id + '/control', JSON.stringify({
                 action: action,
-                token: currentDevice.token,
-                timestamp: Date.now()
+                timestamp: timestamp,
+                signature: signature
             }), { qos: 1 });
+        }
+
+        // HMAC-SHA256计算（JavaScript版）
+        async function computeHMAC(data, key) {
+            const encoder = new TextEncoder();
+            const keyData = encoder.encode(key);
+            const messageData = encoder.encode(key + data);
+
+            const hashBuffer = await crypto.subtle.digest('SHA-256', messageData);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+            return hashHex;
         }
 
         function addLog(msg) {

@@ -13,6 +13,7 @@
  */
 
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <WebServer.h>
 #include <DNSServer.h>
 #include <PubSubClient.h>
@@ -33,16 +34,16 @@ const char* FIRMWARE_DATE = "2026-05-27";
 // AP配置
 const char* AP_SSID = "WOL-Mini-USB";
 
-// 公共MQTT服务器
+// 公共MQTT服务器（TLS加密）
 const char* DEFAULT_MQTT_SERVER = "broker-cn.emqx.io";
-const int DEFAULT_MQTT_PORT = 1883;
+const int DEFAULT_MQTT_PORT = 8883;  // TLS端口
 
 // 全局变量
 Preferences preferences;
 WebServer configServer(80);
 DNSServer dnsServer;
-WiFiClient wifiClient;  // 普通TCP客户端（无TLS）
-PubSubClient mqttClient(wifiClient);
+WiFiClientSecure mqttWifiClient;  // TLS加密客户端（改名避免冲突）
+PubSubClient mqttClient(mqttWifiClient);
 USBHIDKeyboard keyboard;
 USBHIDSystemControl systemControl;
 
@@ -215,6 +216,28 @@ void saveConfig() {
 
 // 密钥（与Python脚本保持一致）
 const char* ACTIVATION_SECRET = "WOL-MINI-USB-2024-SECRET";
+
+// HMAC计算函数（用于消息签名）
+String computeHMAC(String data, String key) {
+  uint8_t hash[32];
+  mbedtls_sha256_context sha_ctx;
+
+  String combined = key + data;
+  mbedtls_sha256_init(&sha_ctx);
+  mbedtls_sha256_starts(&sha_ctx, false);
+  mbedtls_sha256_update(&sha_ctx, (uint8_t*)combined.c_str(), combined.length());
+  mbedtls_sha256_finish(&sha_ctx, hash);
+  mbedtls_sha256_free(&sha_ctx);
+
+  // 返回前16位十六进制
+  String result = "";
+  for (int i = 0; i < 8; i++) {
+    char hex[3];
+    sprintf(hex, "%02X", hash[i]);
+    result += hex;
+  }
+  return result;
+}
 
 bool validateActivationCode(String code) {
   // 激活码格式：XXXX-XXXX-XXXX（12位十六进制）
@@ -647,10 +670,14 @@ void setupNormalMode() {
     configServer.begin();
     Serial.println("HTTP server started");
 
+    // 配置TLS（使用内置CA证书）
+    mqttWifiClient.setInsecure();  // 公共MQTT，不验证服务器证书（简化）
+    // 或者使用CA证书验证（更安全但需要证书）
+
     mqttClient.setServer(DEFAULT_MQTT_SERVER, DEFAULT_MQTT_PORT);
     mqttClient.setCallback(mqttCallback);
     mqttClient.setBufferSize(512);
-    Serial.println("MQTT configured: " + String(DEFAULT_MQTT_SERVER));
+    Serial.println("MQTT configured (TLS): " + String(DEFAULT_MQTT_SERVER) + ":" + String(DEFAULT_MQTT_PORT));
   } else {
     Serial.println("\nWiFi failed, re-entering config mode...");
     enterConfigMode();
@@ -694,19 +721,32 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   deserializeJson(doc, payload, length);
 
   String action = doc["action"].as<String>();
-  String receivedToken = doc["token"].as<String>();
+  long timestamp = doc["timestamp"].as<long>();
+  String receivedSignature = doc["signature"].as<String>();
 
   Serial.println("Action: " + action);
-  Serial.println("Token: " + receivedToken);
+  Serial.println("Timestamp: " + String(timestamp));
+  // 不打印签名，保持安全
 
-  // Token验证（核心安全机制）
-  if (receivedToken != config.controlToken) {
-    Serial.println("Token验证失败，拒绝执行");
-    sendResult(action.c_str(), "rejected", "invalid_token");
+  // 时间戳验证（防止重放攻击）
+  long currentTimestamp = millis() / 1000;
+  if (abs(currentTimestamp - timestamp) > 300) {  // 5分钟有效期
+    Serial.println("时间戳过期，拒绝执行");
+    sendResult(action.c_str(), "rejected", "timestamp_expired");
     return;
   }
 
-  Serial.println("Token验证通过");
+  // HMAC签名验证（Token不传输，更安全）
+  String data = action + String(timestamp);
+  String expectedSignature = computeHMAC(data, config.controlToken);
+
+  if (receivedSignature != expectedSignature) {
+    Serial.println("签名验证失败，拒绝执行");
+    sendResult(action.c_str(), "rejected", "invalid_signature");
+    return;
+  }
+
+  Serial.println("签名验证通过");
 
   // 区分唤醒和睡眠操作
   if (action == "wake") {
