@@ -299,17 +299,19 @@
                     <div class="card-icon">🔧</div>
                     <div class="card-title">烧录固件</div>
                 </div>
-                <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:12px">
-                    通过USB直接烧录固件到ESP32-S3，无需安装任何软件<br>
-                    <span style="color:#f59e0b">⚠️ 需要Chrome/Edge浏览器(89+版本)</span>
+                <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:8px">
+                    通过USB直接烧录固件到ESP32-S3，无需安装任何软件
+                </p>
+                <p style="font-size:12px;color:#22c55e;margin-bottom:8px">
+                    ✅ Chrome/Edge浏览器(89+) 已支持
+                </p>
+                <p style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:12px">
+                    烧录步骤：点击按钮 → 选择串口 → 选择固件 → 开始烧录
                 </p>
                 <!-- 使用官方ESP Web Tools组件 -->
                 <esp-web-install-button manifest="./firmware/manifest.json">
                     <button slot="activate" class="ios-btn ios-btn-flash" style="width:100%">⚡ 浏览器烧录固件</button>
                 </esp-web-install-button>
-                <div id="flashResult" class="flash-progress hidden">
-                    <div class="flash-status" id="flashStatus"></div>
-                </div>
             </div>
 
             <!-- 登录卡片 -->
