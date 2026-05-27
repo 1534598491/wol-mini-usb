@@ -24,7 +24,7 @@
 #include <USBHIDSystemControl.h>
 #include "mbedtls/sha256.h"
 
-const char* FIRMWARE_VERSION = "1.1.1";
+const char* FIRMWARE_VERSION = "1.1.2";
 const char* FIRMWARE_DATE = "2026-05-27";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
@@ -73,6 +73,7 @@ void enterConfigMode();
 void handleConfigRoot();
 void handleWiFiScan();
 void handleConfigSave();
+void handleVerifyActivation();
 void handleStatus();
 void setupNormalMode();
 void connectMQTT();
@@ -428,6 +429,7 @@ void enterConfigMode() {
   configServer.on("/", handleConfigRoot);
   configServer.on("/scan", handleWiFiScan);
   configServer.on("/save", HTTP_POST, handleConfigSave);
+  configServer.on("/verify_activation", HTTP_POST, handleVerifyActivation);
   configServer.on("/status", handleStatus);
   configServer.onNotFound(handleConfigRoot);
   configServer.begin();
@@ -525,10 +527,15 @@ void handleConfigRoot() {
   html += F("<label>设备激活码</label>");
   html += "<input id='activation_code' value='" + config.activationCode + "' placeholder='格式: XXXX-XXXX-XXXX'>";
   html += F("<p class='hint'>输入激活码解锁完整功能，无激活码仅能唤醒</p>");
+
+  // 验证按钮和结果显示区域
+  html += F("<button style='width:100%;padding:10px;background:#3b82f6;border-radius:8px;color:#fff;font-size:14px;cursor:pointer;border:none;margin-top:8px' onclick='verifyActivation()'>验证激活码</button>");
+  html += F("<div id='activation_result' style='margin-top:8px;font-size:12px'></div>");
+
   if (!isActivated && config.activationCode.length() == 0) {
-    html += F("<p style='color:#f59e0b;font-size:11px'>⚠️ 未激活：仅唤醒功能可用</p>");
+    html += F("<p style='color:#f59e0b;font-size:11px;margin-top:8px'>⚠️ 未激活：仅唤醒功能可用</p>");
   } else if (isActivated) {
-    html += F("<p style='color:#22c55e;font-size:11px'>✅ 已激活：完整功能可用</p>");
+    html += F("<p style='color:#22c55e;font-size:11px;margin-top:8px'>✅ 已激活：完整功能可用</p>");
   }
   html += F("</div>");
 
@@ -564,6 +571,20 @@ void handleConfigRoot() {
   html += F("event.currentTarget.classList.add('selected');");
   html += F("document.getElementById('selectedSSID').value=ssid;");
   html += F("document.getElementById('passwordField').style.display=secure?'block':'none';}");
+
+  // 激活码验证函数
+  html += F("function verifyActivation(){");
+  html += F("let code=document.getElementById('activation_code').value.trim();");
+  html += F("if(!code){document.getElementById('activation_result').innerHTML='<p style=\"color:#f59e0b\">请先输入激活码</p>';return;}");
+  html += F("document.getElementById('activation_result').innerHTML='<p style=\"color:#64748b\">正在验证...</p>';");
+  html += F("fetch('/verify_activation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:code})})");
+  html += F(".then(r=>r.json()).then(d=>{");
+  html += F("if(d.valid){");
+  html += F("document.getElementById('activation_result').innerHTML='<p style=\"color:#22c55e;font-weight:bold\">✅ 验证成功！激活码正确</p>';}");
+  html += F("}else{");
+  html += F("document.getElementById('activation_result').innerHTML='<p style=\"color:#ef4444;font-weight:bold\">❌ 验证失败！激活码不匹配此设备</p><p style=\"color:#f59e0b;font-size:11px\">提示：激活码与MAC地址绑定，请检查是否输入正确</p>';}");
+  html += F("}}).catch(e=>{document.getElementById('activation_result').innerHTML='<p style=\"color:#ef4444\">验证失败:'+e+'</p>';});}");
+
   html += F("function saveConfig(){");
   html += F("let ssid=document.getElementById('selectedSSID').value;");
   html += F("let token=document.getElementById('control_token').value;");
@@ -581,6 +602,27 @@ void handleConfigRoot() {
   html += F("</script></body></html>");
 
   configServer.send(200, "text/html", html);
+}
+
+void handleVerifyActivation() {
+  String body = configServer.arg("plain");
+  JsonDocument doc;
+  deserializeJson(doc, body);
+
+  String code = doc["code"].as<String>();
+  code.toUpperCase();
+
+  bool valid = validateActivationCode(code);
+
+  JsonDocument result;
+  result["valid"] = valid;
+  result["mac"] = WiFi.macAddress();
+
+  String json;
+  serializeJson(result, json);
+
+  configServer.send(200, "application/json", json);
+  Serial.println("Activation verification: " + code + " -> " + (valid ? "valid" : "invalid"));
 }
 
 void handleConfigSave() {
