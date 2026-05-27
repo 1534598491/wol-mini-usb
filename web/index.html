@@ -305,9 +305,14 @@
                 <p style="font-size:12px;color:#22c55e;margin-bottom:8px">
                     ✅ Chrome/Edge浏览器(89+) 已支持
                 </p>
-                <p style="font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:12px">
-                    烧录步骤：点击按钮 → 选择串口 → 选择固件 → 开始烧录
-                </p>
+                <!-- 弹窗英文翻译说明 -->
+                <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:rgba(255,255,255,0.7)">
+                    <b style="color:#3b82f6">弹窗英文说明：</b><br>
+                    • <b>Connect</b> = 连接设备（选择ESP32串口）<br>
+                    • <b>Install</b> = 安装固件（选择"Manual flash"手动烧录）<br>
+                    • <b>Logs</b> = 烧录进度日志<br>
+                    • <b>Success!</b> = 烧录成功
+                </div>
                 <!-- 使用官方ESP Web Tools组件 -->
                 <esp-web-install-button manifest="./firmware/manifest.json">
                     <button slot="activate" class="ios-btn ios-btn-flash" style="width:100%">⚡ 浏览器烧录固件</button>
