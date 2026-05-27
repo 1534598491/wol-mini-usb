@@ -241,39 +241,9 @@
 
         .hidden { display: none !important; }
 
-        /* 烧录进度样式 */
-        .flash-progress {
-            background: rgba(0,0,0,0.3);
-            border-radius: 8px;
-            padding: 16px;
-            margin-top: 12px;
-        }
-        .flash-progress-bar {
-            height: 8px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .flash-progress-fill {
-            height: 100%;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            border-radius: 4px;
-            transition: width 0.3s;
-        }
-        .flash-status {
-            font-size: 13px;
-            color: rgba(255,255,255,0.7);
-            margin-top: 8px;
-        }
-        .ios-btn-flash {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: #fff;
-        }
-    </style>
+        </style>
 </head>
 <body>
-    <!-- ESP Web Tools - 浏览器烧录固件 -->
-    <script type="module" src="https://cdn.jsdelivr.net/npm/esp-web-tools@9.4.2/+esm"></script>
     <!-- 登录界面 -->
     <div id="loginPage">
         <div class="ios-container">
@@ -288,48 +258,9 @@
                 <div class="guide-icon">📖</div>
                 <div class="guide-text">
                     <div class="guide-title">第一次使用？点击查看说明</div>
-                    <div class="guide-desc">了解配网步骤和常见问题</div>
+                    <div class="guide-desc">了解配网步骤、烧录固件、常见问题</div>
                 </div>
                 <div class="guide-arrow">›</div>
-            </div>
-
-            <!-- 烧录固件卡片 -->
-            <div class="glass-card">
-                <div class="card-header">
-                    <div class="card-icon">🔧</div>
-                    <div class="card-title">烧录固件</div>
-                </div>
-                <p style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:8px">
-                    通过USB直接烧录固件到ESP32-S3，无需安装任何软件
-                </p>
-                <p style="font-size:12px;color:#22c55e;margin-bottom:8px">
-                    ✅ Chrome/Edge浏览器(89+) 已支持
-                </p>
-                <!-- 版本选择 -->
-                <div class="ios-input-group" style="margin-bottom:8px">
-                    <label class="ios-label">选择固件版本</label>
-                    <select class="ios-input" id="firmwareVersion" onchange="updateManifest()">
-                        <option value="v1.0">v1.0 (最新稳定版)</option>
-                    </select>
-                </div>
-                <div class="ios-input-group" style="margin-bottom:8px">
-                    <label class="ios-label">选择板子型号</label>
-                    <select class="ios-input" id="boardType">
-                        <option value="esp32-s3">ESP32-S3 DevKit (推荐)</option>
-                    </select>
-                </div>
-                <!-- 弹窗英文翻译说明 -->
-                <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:rgba(255,255,255,0.7)">
-                    <b style="color:#3b82f6">弹窗英文说明：</b><br>
-                    • <b>Connect</b> = 连接设备（选择ESP32串口）<br>
-                    • <b>Install</b> = 安装固件（选择"Manual flash"手动烧录）<br>
-                    • <b>Logs</b> = 烧录进度日志<br>
-                    • <b>Success!</b> = 烧录成功
-                </div>
-                <!-- 使用官方ESP Web Tools组件 -->
-                <esp-web-install-button id="flashButton" manifest="./firmware/manifest.json">
-                    <button slot="activate" class="ios-btn ios-btn-flash" style="width:100%">⚡ 浏览器烧录固件</button>
-                </esp-web-install-button>
             </div>
 
             <!-- 登录卡片 -->
