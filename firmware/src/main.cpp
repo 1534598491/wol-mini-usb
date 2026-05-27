@@ -24,7 +24,7 @@
 #include <USBHIDSystemControl.h>
 #include "mbedtls/sha256.h"
 
-const char* FIRMWARE_VERSION = "1.1.0";
+const char* FIRMWARE_VERSION = "1.1.1";
 const char* FIRMWARE_DATE = "2026-05-27";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
@@ -600,16 +600,22 @@ void handleConfigSave() {
 
   // 保存激活码
   String newActivationCode = doc["activation_code"].as<String>();
+  bool activationValid = false;
   if (newActivationCode.length() > 0) {
     if (validateActivationCode(newActivationCode)) {
       config.activationCode = newActivationCode;
+      activationValid = true;
       Serial.println("Activation code valid: " + newActivationCode);
     } else {
       Serial.println("Activation code invalid: " + newActivationCode);
+      // 激活码无效，不保存，保持原有状态
     }
   }
 
   saveConfig();
+
+  // 判断最终激活状态
+  bool finalActivated = checkActivation();
 
   String html = F("<!DOCTYPE html><html><head><meta charset='UTF-8'></head>");
   html += F("<body style='background:#1e293b;color:#f8fafc;text-align:center;padding:40px'>");
@@ -617,14 +623,23 @@ void handleConfigSave() {
   html += "<p style='font-size:18px;color:#22c55e;margin:20px 0'>设备ID: <b>" + config.deviceId + "</b></p>";
   html += "<p>Token: <b>" + config.controlToken + "</b></p>";
 
+  // 显示激活码验证结果
+  if (newActivationCode.length() > 0) {
+    if (activationValid) {
+      html += F("<p style='color:#22c55e;font-weight:bold'>✅ 激活码验证成功！完整功能已解锁</p>");
+    } else {
+      html += F("<p style='color:#ef4444;font-weight:bold'>❌ 激活码验证失败！请检查激活码是否正确</p>");
+      html += F("<p style='color:#f59e0b;font-size:13px'>提示：激活码与MAC地址绑定，请确认输入正确</p>");
+    }
+  }
+
   // 显示激活状态
-  if (isActivated) {
+  if (finalActivated) {
     html += F("<p style='color:#22c55e'>✅ 已激活：完整功能可用</p>");
   } else {
     html += F("<p style='color:#f59e0b'>⚠️ 未激活：仅唤醒功能可用</p>");
   }
 
-  html += F("<p style='margin-top:20px;color:#64748b;font-size:14px'>请将ESP32插入PC USB口，设备即将重启...</p></body></html>");
   html += F("<p style='margin-top:20px;color:#64748b;font-size:14px'>请将ESP32插入PC USB口，设备即将重启...</p></body></html>");
 
   configServer.send(200, "text/html", html);
@@ -762,8 +777,6 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       return;
     }
     Serial.println("触发睡眠...");
-    triggerSleep();
-    sendResult(action.c_str(), "success", "");
     triggerSleep();
     sendResult(action.c_str(), "success", "");
   } else if (action == "ping" || action == "status") {

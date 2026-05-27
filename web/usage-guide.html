@@ -161,6 +161,16 @@
             width: 100px;
         }
         table.info-table td:last-child { color: #fff; font-weight: 500; }
+
+        /* 下拉菜单样式 - 白底黑字 */
+        select {
+            background-color: #fff !important;
+            color: #333 !important;
+        }
+        select option {
+            background-color: #fff !important;
+            color: #333 !important;
+        }
     </style>
 </head>
 <body>
@@ -190,15 +200,16 @@
             </p>
             <div class="ios-input-group" style="margin-bottom:8px">
                 <label style="font-size:12px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">选择固件版本</label>
-                <select style="width:100%;padding:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:14px" id="firmwareVersion" onchange="changeVersion()">
-                    <option value="v1.1.0">v1.1.0 (TLS加密+HMAC签名) - 推荐</option>
-                    <option value="v1.0.0">v1.0.0 (基础版本)</option>
+                <select style="width:100%;padding:10px;background:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#333;font-size:14px" id="firmwareVersion" onchange="changeVersion()">
+                    <option value="v1.1.1" style="background:#fff;color:#333">v1.1.1 (激活码验证提示修复) - 推荐</option>
+                    <option value="v1.1.0" style="background:#fff;color:#333">v1.1.0 (TLS加密+HMAC签名)</option>
+                    <option value="v1.0.0" style="background:#fff;color:#333">v1.0.0 (基础版本)</option>
                 </select>
             </div>
             <div class="ios-input-group" style="margin-bottom:12px">
                 <label style="font-size:12px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">选择板子型号</label>
-                <select style="width:100%;padding:10px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:14px" id="boardType">
-                    <option value="esp32-s3">ESP32-S3 DevKit (推荐)</option>
+                <select style="width:100%;padding:10px;background:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#333;font-size:14px" id="boardType">
+                    <option value="esp32-s3" style="background:#fff;color:#333">ESP32-S3 DevKit (推荐)</option>
                 </select>
             </div>
             <div style="background:rgba(0,0,0,0.2);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:rgba(255,255,255,0.7)">
@@ -207,13 +218,13 @@
                 • <b>Install</b> = 安装固件<br>
                 • <b>Success!</b> = 烧录成功
             </div>
-            <esp-web-install-button id="flashBtn" manifest="./firmware/manifest_v1.1.0.json">
+            <esp-web-install-button id="flashBtn" manifest="./firmware/manifest_v1.1.1.json">
                 <button slot="activate" style="width:100%;padding:14px;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:600;cursor:pointer">⚡ 浏览器烧录固件</button>
             </esp-web-install-button>
         </div>
 
         <!-- ESP Web Tools -->
-        <script type="module" src="https://cdn.jsdelivr.net/npm/esp-web-tools@9.4.2/+esm"></script>
+        <script type="module" src="https://fastly.jsdelivr.net/npm/esp-web-tools@9.4.2/+esm"></script>
         <script>
             function changeVersion() {
                 const version = document.getElementById('firmwareVersion').value;
