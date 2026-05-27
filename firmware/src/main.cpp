@@ -451,6 +451,15 @@ void handleConfigRoot() {
   html += F("使用方式：ESP32插入PC USB口 → 配网 → 打开Web控制页面 → 点击唤醒/睡眠");
   html += F("</div>");
 
+  // 显示MAC地址（用于生成激活码）
+  String macAddress = WiFi.macAddress();
+  html += F("<div class='card' style='background:#1e3a5f'>");
+  html += F("<div class='card-title' style='color:#22c55e'>设备信息</div>");
+  html += F("<label style='font-size:12px;color:#64748b'>MAC地址（用于生成激活码）</label>");
+  html += "<div style='padding:12px;background:#334155;border-radius:8px;font-size:16px;color:#22c55e;font-weight:bold;text-align:center;font-family:monospace'>" + macAddress + "</div>";
+  html += F("<p style='font-size:11px;color:#94a3b8;margin-top:8px'>购买激活码请联系卖家，提供此MAC地址</p>");
+  html += F("</div>");
+
   // WiFi选择
   html += F("<div class='card'>");
   html += F("<div class='card-title'>WiFi 网络</div>");
