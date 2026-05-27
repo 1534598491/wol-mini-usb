@@ -72,6 +72,8 @@ void handleStatus();
 void setupNormalMode();
 void connectMQTT();
 void mqttCallback(char* topic, byte* payload, unsigned int length);
+void triggerWake();
+void triggerSleep();
 void triggerWakeOrSleep();
 void sendHeartbeat();
 void sendResult(const char* action, const char* result, const char* reason);
@@ -84,9 +86,13 @@ void setup() {
   USB.begin();
   keyboard.begin();
   systemControl.begin();
+
   Serial.begin(115200);
   Serial.println("\n\n=== WOL-Mini-USB V1.0 ===");
-  Serial.println("USB HID + SystemControl initialized");
+  Serial.println("USB HID initialized");
+
+  // 等待USB枚举完成
+  delay(1000);
 
   bootTime = millis();
 
@@ -582,10 +588,16 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
   Serial.println("Token验证通过");
 
-  // 执行操作（统一使用USB Sleep键）
-  if (action == "wake" || action == "sleep") {
-    Serial.println("发送USB Sleep键...");
-    triggerWakeOrSleep();
+  // 区分唤醒和睡眠操作
+  if (action == "wake") {
+    // 唤醒：只发送按键，不发送睡眠命令
+    Serial.println("触发唤醒...");
+    triggerWake();
+    sendResult(action.c_str(), "success", "");
+  } else if (action == "sleep") {
+    // 睡眠：发送System Standby命令
+    Serial.println("触发睡眠...");
+    triggerSleep();
     sendResult(action.c_str(), "success", "");
   } else if (action == "ping" || action == "status") {
     sendHeartbeat();
@@ -595,14 +607,45 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
 // ===== USB HID触发 =====
 
-void triggerWakeOrSleep() {
-  // 使用USB SystemControl的STANDBY命令
-  // 功能：PC睡眠时唤醒，PC运行时触发睡眠
-  Serial.println("USB SystemControl: Sending STANDBY...");
+void triggerWake() {
+  // 唤醒：发送空格键唤醒睡眠的PC
+  Serial.println("\n=== USB HID Wake ===");
+  keyboard.write(' ');
+  Serial.println("=== Wake: Space sent ===\n");
+}
+
+void triggerSleep() {
+  // 睡眠：发送System Standby命令
+  Serial.println("\n=== USB HID Sleep ===");
   systemControl.press(SYSTEM_CONTROL_STANDBY);
   delay(50);
   systemControl.release();
-  Serial.println("USB SystemControl: STANDBY sent");
+  Serial.println("=== Sleep: System Standby sent ===\n");
+}
+
+void triggerWakeOrSleep() {
+  // 保留此函数作为备用（同时发送唤醒和睡眠）
+  Serial.println("\n=== USB HID Combined ===");
+  delay(100);
+
+  // System Standby
+  systemControl.press(SYSTEM_CONTROL_STANDBY);
+  delay(100);
+  systemControl.release();
+  delay(100);
+
+  // Space key
+  keyboard.press(' ');
+  delay(100);
+  keyboard.release(' ');
+  delay(50);
+
+  // Enter key
+  keyboard.press(KEY_RETURN);
+  delay(100);
+  keyboard.release(KEY_RETURN);
+
+  Serial.println("=== Combined Commands Sent ===\n");
 }
 
 void sendHeartbeat() {
