@@ -51,8 +51,10 @@ struct Config {
   String deviceName;     // 用户自定义名称
   String deviceId;       // 完整ID = 名称-MAC后4位
   String controlToken;
+  String activationCode; // 激活码
 } config;
 
+bool isActivated = false;  // 激活状态
 bool configMode = false;
 unsigned long lastHeartbeat = 0;
 unsigned long bootPressStart = 0;
@@ -81,6 +83,8 @@ void sendResult(const char* action, const char* result, const char* reason);
 String getSignalLevel(int rssi);
 String getBandInfo(int channel);
 bool is5GHz(int channel);
+bool validateActivationCode(String code);
+bool checkActivation();
 
 void setup() {
   // 关键：USB HID必须先初始化（在WiFi之前）
@@ -168,7 +172,11 @@ void loadConfig() {
   config.deviceName = preferences.getString("device_name", "");
   config.deviceId = preferences.getString("device_id", "");
   config.controlToken = preferences.getString("control_token", "");
+  config.activationCode = preferences.getString("activation_code", "");
   preferences.end();
+
+  // 检查激活状态
+  isActivated = checkActivation();
 
   // 如果没有设备ID，生成默认值
   if (config.deviceId.length() == 0) {
@@ -184,6 +192,7 @@ void loadConfig() {
   Serial.println("  Device Name: " + config.deviceName);
   Serial.println("  Device ID: " + config.deviceId);
   Serial.println("  Token: " + (config.controlToken.length() > 0 ? String("(已设置)") : String("(未设置)")));
+  Serial.println("  Activated: " + String(isActivated ? "Yes" : "No"));
 }
 
 void saveConfig() {
@@ -193,8 +202,44 @@ void saveConfig() {
   preferences.putString("device_name", config.deviceName);
   preferences.putString("device_id", config.deviceId);
   preferences.putString("control_token", config.controlToken);
+  if (config.activationCode.length() > 0) {
+    preferences.putString("activation_code", config.activationCode);
+  }
   preferences.end();
-  Serial.println("Config saved!");
+  isActivated = checkActivation();
+  Serial.println("Config saved! Activated: " + String(isActivated ? "Yes" : "No"));
+}
+
+// ===== 激活码验证 =====
+
+bool validateActivationCode(String code) {
+  // 激活码格式：XXXX-XXXX-XXXX（12位字母数字）
+  // 示例：A1B2-C3D4-E5F6
+  if (code.length() != 14) return false;  // 12字符 + 2个分隔符
+
+  // 检查格式：XXXX-XXXX-XXXX
+  if (code.charAt(4) != '-' || code.charAt(9) != '-') return false;
+
+  // 检查每段是否为有效字符
+  for (int i = 0; i < 14; i++) {
+    if (i == 4 || i == 9) continue;  // 跳过分隔符
+    char c = code.charAt(i);
+    if (!((c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9'))) return false;
+  }
+
+  // 这里可以添加更严格的验证逻辑
+  // 例如：与预设的激活码列表匹配，或与MAC地址绑定
+
+  // 简化版：格式正确即视为有效
+  return true;
+}
+
+bool checkActivation() {
+  // 检查是否已激活
+  if (config.activationCode.length() == 0) {
+    return false;
+  }
+  return validateActivationCode(config.activationCode);
 }
 
 void clearWifiConfig() {
@@ -411,6 +456,19 @@ void handleConfigRoot() {
   html += F("<p class='hint'>Token用于验证远程控制指令，请牢记此密码（建议8-16位）</p>");
   html += F("</div>");
 
+  // 激活码设置
+  html += F("<div class='card'>");
+  html += F("<div class='card-title'>激活码（可选）</div>");
+  html += F("<label>设备激活码</label>");
+  html += "<input id='activation_code' value='" + config.activationCode + "' placeholder='格式: XXXX-XXXX-XXXX'>";
+  html += F("<p class='hint'>输入激活码解锁完整功能，无激活码仅能唤醒</p>");
+  if (!isActivated && config.activationCode.length() == 0) {
+    html += F("<p style='color:#f59e0b;font-size:11px'>⚠️ 未激活：仅唤醒功能可用</p>");
+  } else if (isActivated) {
+    html += F("<p style='color:#22c55e;font-size:11px'>✅ 已激活：完整功能可用</p>");
+  }
+  html += F("</div>");
+
   html += F("<button class='submit-btn' onclick='saveConfig()'>保存配置</button>");
   html += F("</div>");
 
@@ -451,9 +509,10 @@ void handleConfigRoot() {
   html += F("if(!name){alert('请设置设备名称');return;}");
   html += F("if(ssid.length==0){alert('请选择WiFi');return;}");
   html += F("let fullId=name+'-'+MAC_SUFFIX;");
+  html += F("let activationCode=document.getElementById('activation_code').value.trim();");
   html += F("let data={wifi_ssid:ssid,wifi_pass:document.getElementById('wifi_pass').value,");
   html += F("device_name:name,device_id:fullId,");
-  html += F("control_token:token};");
+  html += F("control_token:token,activation_code:activationCode};");
   html += F("fetch('/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})");
   html += F(".then(r=>r.text()).then(h=>{document.body.innerHTML=h;}).catch(e=>{alert('保存失败:'+e);});}");
   html += F("</script></body></html>");
@@ -476,6 +535,17 @@ void handleConfigSave() {
   config.deviceId = doc["device_id"].as<String>();
   config.controlToken = doc["control_token"].as<String>();
 
+  // 保存激活码
+  String newActivationCode = doc["activation_code"].as<String>();
+  if (newActivationCode.length() > 0) {
+    if (validateActivationCode(newActivationCode)) {
+      config.activationCode = newActivationCode;
+      Serial.println("Activation code valid: " + newActivationCode);
+    } else {
+      Serial.println("Activation code invalid: " + newActivationCode);
+    }
+  }
+
   saveConfig();
 
   String html = F("<!DOCTYPE html><html><head><meta charset='UTF-8'></head>");
@@ -483,6 +553,15 @@ void handleConfigSave() {
   html += F("<h1 style='color:#22c55e'>配置已保存!</h1>");
   html += "<p style='font-size:18px;color:#22c55e;margin:20px 0'>设备ID: <b>" + config.deviceId + "</b></p>";
   html += "<p>Token: <b>" + config.controlToken + "</b></p>";
+
+  // 显示激活状态
+  if (isActivated) {
+    html += F("<p style='color:#22c55e'>✅ 已激活：完整功能可用</p>");
+  } else {
+    html += F("<p style='color:#f59e0b'>⚠️ 未激活：仅唤醒功能可用</p>");
+  }
+
+  html += F("<p style='margin-top:20px;color:#64748b;font-size:14px'>请将ESP32插入PC USB口，设备即将重启...</p></body></html>");
   html += F("<p style='margin-top:20px;color:#64748b;font-size:14px'>请将ESP32插入PC USB口，设备即将重启...</p></body></html>");
 
   configServer.send(200, "text/html", html);
@@ -591,13 +670,20 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
   // 区分唤醒和睡眠操作
   if (action == "wake") {
-    // 唤醒：只发送按键，不发送睡眠命令
+    // 唤醒：所有设备都可以执行
     Serial.println("触发唤醒...");
     triggerWake();
     sendResult(action.c_str(), "success", "");
   } else if (action == "sleep") {
-    // 睡眠：发送System Standby命令
+    // 睡眠：需要激活才能执行
+    if (!isActivated) {
+      Serial.println("未激活，拒绝执行睡眠操作");
+      sendResult(action.c_str(), "rejected", "not_activated");
+      return;
+    }
     Serial.println("触发睡眠...");
+    triggerSleep();
+    sendResult(action.c_str(), "success", "");
     triggerSleep();
     sendResult(action.c_str(), "success", "");
   } else if (action == "ping" || action == "status") {
@@ -658,6 +744,7 @@ void sendHeartbeat() {
   doc["usb_hid"] = "ready";
   doc["firmware_version"] = FIRMWARE_VERSION;
   doc["firmware_date"] = FIRMWARE_DATE;
+  doc["activated"] = isActivated;
 
   String msg;
   serializeJson(doc, msg);

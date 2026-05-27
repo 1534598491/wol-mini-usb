@@ -428,6 +428,11 @@
                 if (msg.ip) html += '<div class="device-info-row"><span class="device-info-label">IP</span><span class="device-info-value">' + msg.ip + '</span></div>';
                 if (msg.firmware_version) html += '<div class="device-info-row"><span class="device-info-label">固件版本</span><span class="device-info-value">' + msg.firmware_version + '</span></div>';
                 if (msg.firmware_date) html += '<div class="device-info-row"><span class="device-info-label">固件日期</span><span class="device-info-value">' + msg.firmware_date + '</span></div>';
+                if (msg.activated !== undefined) {
+                    let activatedText = msg.activated ? '✅ 已激活' : '⚠️ 未激活';
+                    let activatedColor = msg.activated ? '#22c55e' : '#f59e0b';
+                    html += '<div class="device-info-row"><span class="device-info-label">激活状态</span><span class="device-info-value" style="color:' + activatedColor + '">' + activatedText + '</span></div>';
+                }
                 html += '</div>';
                 document.getElementById('statusDisplay').innerHTML = html;
             }
@@ -435,7 +440,12 @@
                 if (msg.result === 'success') {
                     addLog('<span class="log-success">' + msg.action + ' 成功</span>');
                 } else if (msg.result === 'rejected') {
-                    addLog('<span class="log-error">' + msg.action + ' Token错误</span>');
+                    let reason = msg.reason || 'Token错误';
+                    if (reason === 'not_activated') {
+                        addLog('<span class="log-error">' + msg.action + ' 失败：设备未激活</span>');
+                    } else {
+                        addLog('<span class="log-error">' + msg.action + ' Token错误</span>');
+                    }
                 }
             }
         }
