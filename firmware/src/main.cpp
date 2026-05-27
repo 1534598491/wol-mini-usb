@@ -24,7 +24,7 @@
 #include <USBHIDSystemControl.h>
 #include "mbedtls/sha256.h"
 
-const char* FIRMWARE_VERSION = "1.0.0";
+const char* FIRMWARE_VERSION = "1.1.0";
 const char* FIRMWARE_DATE = "2026-05-27";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
