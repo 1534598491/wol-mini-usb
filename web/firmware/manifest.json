@@ -1,0 +1,12 @@
+{
+  "name": "WOL-Mini-USB",
+  "version": "1.0",
+  "chipFamily": "ESP32-S3",
+  "parts": [
+    {
+      "path": "firmware.bin",
+      "offset": 0
+    }
+  ],
+  "description": "即插即用远程唤醒/睡眠方案固件"
+}
