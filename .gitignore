@@ -1,0 +1,11 @@
+# 编译产物
+firmware/.pio/
+firmware/nvs_data.bin
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
