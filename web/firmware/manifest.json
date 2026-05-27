@@ -5,15 +5,15 @@
   "parts": [
     {
       "path": "bootloader.bin",
-      "offset": 0
+      "offset": "0x0"
     },
     {
       "path": "partitions.bin",
-      "offset": 32768
+      "offset": "0x8000"
     },
     {
       "path": "firmware.bin",
-      "offset": 65536
+      "offset": "0x10000"
     }
   ],
   "description": "即插即用远程唤醒/睡眠方案固件"
