@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>WOL-Mini-USB 使用说明</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(180deg, #1a1a2e, #0f0f23);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.8;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+
+        .header {
+            text-align: center;
+            padding: 30px 0 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 24px;
+        }
+        .logo {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 18px;
+            margin: 0 auto 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+        }
+        h1 { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+        .subtitle { color: rgba(255,255,255,0.5); font-size: 14px; }
+
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #22c55e;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: #22c55e;
+            border-radius: 2px;
+            margin-right: 10px;
+        }
+
+        .step {
+            background: rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            position: relative;
+        }
+        .step-number {
+            position: absolute;
+            top: -8px;
+            left: 16px;
+            background: #22c55e;
+            color: #fff;
+            width: 24px;
+            height: 24px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        .step-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            padding-left: 24px;
+        }
+        .step-content {
+            font-size: 14px;
+            color: rgba(255,255,255,0.85);
+            padding-left: 24px;
+        }
+
+        .example-box {
+            background: rgba(59,130,246,0.1);
+            border: 1px dashed rgba(59,130,246,0.3);
+            border-radius: 8px;
+            padding: 14px;
+            margin: 10px 0;
+        }
+        .example-label {
+            color: #3b82f6;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .example-content { font-size: 13px; color: rgba(255,255,255,0.9); }
+        .highlight {
+            background: rgba(34,197,94,0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #22c55e;
+            font-weight: 600;
+        }
+
+        .tip-box {
+            background: rgba(245,158,11,0.1);
+            border-radius: 8px;
+            padding: 14px;
+            margin: 10px 0;
+            border-left: 3px solid #f59e0b;
+        }
+        .tip-box-title { color: #f59e0b; font-weight: 600; margin-bottom: 6px; }
+
+        .faq-item { margin: 10px 0; }
+        .faq-q { font-weight: 600; color: #fff; margin-bottom: 6px; }
+        .faq-a { color: rgba(255,255,255,0.7); padding-left: 14px; font-size: 14px; }
+
+        .back-btn {
+            display: block;
+            text-align: center;
+            padding: 14px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 14px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 24px 0;
+            text-decoration: none;
+        }
+
+        ul { padding-left: 18px; margin: 10px 0; }
+        li { margin: 6px 0; color: rgba(255,255,255,0.85); font-size: 14px; }
+        li::marker { color: #22c55e; }
+
+        table.info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        table.info-table td {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 14px;
+        }
+        table.info-table td:first-child {
+            color: rgba(255,255,255,0.5);
+            width: 100px;
+        }
+        table.info-table td:last-child { color: #fff; font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">⚡</div>
+            <h1>使用说明</h1>
+            <p class="subtitle">3分钟快速上手</p>
+        </div>
+
+        <!-- 准备工作 -->
+        <div class="section">
+            <div class="section-title">准备工作</div>
+            <p style="font-size:14px;color:rgba(255,255,255,0.85)">
+                将设备插入电脑USB口，确保周围有可用的WiFi网络（2.4GHz）。
+            </p>
+        </div>
+
+        <!-- 使用步骤 -->
+        <div class="section">
+            <div class="section-title">使用步骤</div>
+
+            <div class="step">
+                <div class="step-number">1</div>
+                <div class="step-title">首次配网</div>
+                <div class="step-content">
+                    <p>设备首次启动会进入配网模式：</p>
+                    <div class="example-box">
+                        <div class="example-label">操作示例</div>
+                        <div class="example-content">
+                            打开手机WiFi → 连接热点 <span class="highlight">WOL-Mini-USB</span> → 浏览器自动弹出配网页面
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">2</div>
+                <div class="step-title">设置WiFi和密码</div>
+                <div class="step-content">
+                    <div class="example-box">
+                        <div class="example-label">操作示例</div>
+                        <div class="example-content">
+                            点击"扫描WiFi" → 选择 <span class="highlight">MyHome-WiFi</span> → 输入密码 <span class="highlight">12345678</span>
+                        </div>
+                    </div>
+                    <div class="tip-box">
+                        <div class="tip-box-title">注意</div>
+                        仅支持2.4GHz WiFi，不支持5GHz
+                    </div>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">3</div>
+                <div class="step-title">设置设备ID和Token</div>
+                <div class="step-content">
+                    <div class="example-box">
+                        <div class="example-label">配置示例</div>
+                        <div class="example-content">
+                            设备名称：<span class="highlight">mypc</span>（随便起名）<br>
+                            设备ID：<span class="highlight">mypc-150C</span>（自动生成，记住这个）<br>
+                            Token：<span class="highlight">abcd1234</span>（自己设置，记住这个）
+                        </div>
+                    </div>
+                    <div class="tip-box">
+                        <div class="tip-box-title">重要</div>
+                        设备ID和Token要记住，远程控制时需要输入
+                    </div>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-number">4</div>
+                <div class="step-title">开始远程控制</div>
+                <div class="step-content">
+                    <div class="example-box">
+                        <div class="example-label">操作示例</div>
+                        <div class="example-content">
+                            打开控制网页 → 输入设备ID <span class="highlight">mypc-150C</span> → 输入Token <span class="highlight">abcd1234</span> → 点击"唤醒电脑"
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LED状态说明 -->
+        <div class="section">
+            <div class="section-title">LED状态说明</div>
+            <table class="info-table">
+                <tr><td>闪烁</td><td>配网模式（等待配网）</td></tr>
+                <tr><td>常亮</td><td>WiFi已连，MQTT未连接</td></tr>
+                <tr><td>常灭</td><td>正常工作状态</td></tr>
+            </table>
+        </div>
+
+        <!-- 常见问题 -->
+        <div class="section">
+            <div class="section-title">常见问题</div>
+
+            <div class="faq-item">
+                <div class="faq-q">Q: 电脑关机了能唤醒吗？</div>
+                <div class="faq-a">不能，只能唤醒睡眠状态的电脑。</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Q: 忘记Token怎么办？</div>
+                <div class="faq-a">长按BOOT按钮5秒进入配网模式，可查看和修改Token（不会清空原有配置）。</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Q: 不在同一WiFi能用吗？</div>
+                <div class="faq-a">可以，远程控制通过互联网，不在同一城市也能用。</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-q">Q: 安全吗？</div>
+                <div class="faq-a">Token是安全密码，只有知道Token的人才能控制。</div>
+            </div>
+        </div>
+
+        <a href="index.html" class="back-btn">← 返回控制页面</a>
+    </div>
+</body>
+</html>

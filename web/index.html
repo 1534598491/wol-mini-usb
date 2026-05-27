@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+    <title>WOL-Mini-USB 远程控制</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f0f23 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .ios-container {
+            max-width: 440px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        /* 顶部导航栏 */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+        .top-bar-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .top-bar-btn {
+            padding: 8px 16px;
+            background: rgba(239,68,68,0.2);
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: 8px;
+            color: #ef4444;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .top-bar-btn:hover { background: rgba(239,68,68,0.3); }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+            padding: 20px 0 16px;
+        }
+        .header-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            border-radius: 14px;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 6px 20px rgba(34,197,94,0.3);
+        }
+        h1 { font-size: 24px; font-weight: 600; }
+        .subtitle { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+        /* 毛玻璃卡片 */
+        .glass-card {
+            background: rgba(255,255,255,0.08);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .card-icon {
+            width: 28px;
+            height: 28px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        .card-title { font-size: 15px; font-weight: 600; color: rgba(255,255,255,0.9); }
+
+        /* iOS输入框 */
+        .ios-input-group { margin-bottom: 12px; }
+        .ios-label { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 6px; display: block; }
+        .ios-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 15px;
+        }
+        .ios-input:focus {
+            outline: none;
+            border-color: #22c55e;
+            box-shadow: 0 0 0 2px rgba(34,197,94,0.2);
+        }
+        .ios-input::placeholder { color: rgba(255,255,255,0.4); }
+
+        /* iOS按钮 */
+        .ios-btn {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            margin-top: 8px;
+            transition: all 0.15s;
+        }
+        .ios-btn-primary { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+        .ios-btn-primary:hover { transform: scale(1.01); }
+        .ios-btn-success { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+        .ios-btn-warning { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
+        .ios-btn-link { background: transparent; color: #3b82f6; border: 1px solid rgba(59,130,246,0.3); }
+        .ios-btn-link:hover { background: rgba(59,130,246,0.1); }
+
+        /* 状态徽章 */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .status-online { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .status-offline { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .status-connecting { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        .status-online .status-dot { background: #22c55e; }
+        .status-offline .status-dot { background: #ef4444; animation: none; }
+        .status-connecting .status-dot { background: #f59e0b; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* 设备信息 */
+        .device-info { font-size: 14px; line-height: 1.6; }
+        .device-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .device-info-row:last-child { border-bottom: none; }
+        .device-info-label { color: rgba(255,255,255,0.5); }
+        .device-info-value { color: #fff; font-weight: 500; }
+
+        /* 操作日志 */
+        .log-container { max-height: 120px; overflow-y: auto; font-size: 12px; }
+        .log-item {
+            padding: 8px 10px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 6px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .log-time { color: rgba(255,255,255,0.4); }
+        .log-success { color: #22c55e; }
+        .log-error { color: #ef4444; }
+        .log-empty { color: rgba(255,255,255,0.4); text-align: center; padding: 16px; }
+
+        /* 引导banner */
+        .guide-banner {
+            background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(34,197,94,0.15));
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .guide-banner:hover { background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(34,197,94,0.25)); }
+        .guide-icon { font-size: 18px; }
+        .guide-text { flex: 1; margin-left: 12px; }
+        .guide-title { font-size: 14px; font-weight: 600; }
+        .guide-desc { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .guide-arrow { color: rgba(255,255,255,0.4); }
+
+        /* 帮助按钮 */
+        .help-fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 300;
+            border: none;
+            box-shadow: 0 6px 20px rgba(59,130,246,0.4);
+            z-index: 100;
+        }
+
+        .ios-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: #22c55e;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+    <!-- 登录界面 -->
+    <div id="loginPage">
+        <div class="ios-container">
+            <div class="header">
+                <div class="header-icon">⚡</div>
+                <h1>WOL-Mini-USB</h1>
+                <p class="subtitle">即插即用远程唤醒/睡眠</p>
+            </div>
+
+            <!-- 使用说明入口 -->
+            <div class="guide-banner" onclick="window.open('usage-guide.html', '_blank')">
+                <div class="guide-icon">📖</div>
+                <div class="guide-text">
+                    <div class="guide-title">第一次使用？点击查看说明</div>
+                    <div class="guide-desc">了解配网步骤和常见问题</div>
+                </div>
+                <div class="guide-arrow">›</div>
+            </div>
+
+            <!-- 登录卡片 -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-icon">🔐</div>
+                    <div class="card-title">设备登录</div>
+                </div>
+                <div class="ios-input-group">
+                    <label class="ios-label">设备 ID</label>
+                    <input type="text" class="ios-input" id="deviceId" placeholder="例如: mypc-150C">
+                </div>
+                <div class="ios-input-group">
+                    <label class="ios-label">Token</label>
+                    <input type="password" class="ios-input" id="token" placeholder="配网时设置的Token">
+                </div>
+                <p style="font-size:12px;color:rgba(255,255,255,0.4);margin:8px 0">设备ID和Token在ESP32配网时设置</p>
+                <button class="ios-btn ios-btn-primary" onclick="login()">连接设备</button>
+                <button class="ios-btn ios-btn-link" onclick="window.open('usage-guide.html', '_blank')">查看使用说明</button>
+            </div>
+        </div>
+        <button class="help-fab" onclick="window.open('usage-guide.html', '_blank')">?</button>
+    </div>
+
+    <!-- 控制界面 -->
+    <div id="controlPage" class="hidden">
+        <!-- 顶部导航栏 -->
+        <div class="top-bar">
+            <div class="top-bar-title">⚡ WOL-Mini-USB</div>
+            <button class="top-bar-btn" onclick="logout()">退出</button>
+        </div>
+
+        <div class="ios-container" style="padding-top:8px">
+            <!-- 控制按钮 - 放在最上面！ -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-icon">🎮</div>
+                    <div class="card-title">远程控制</div>
+                </div>
+                <button class="ios-btn ios-btn-success" onclick="sendWake()">⚡ 唤醒电脑</button>
+                <button class="ios-btn ios-btn-warning" onclick="sendSleep()">🌙 睡眠电脑</button>
+                <button class="ios-btn ios-btn-primary" onclick="sendPing()">🔍 查询状态</button>
+            </div>
+
+            <!-- 设备状态 -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-icon">💻</div>
+                    <div class="card-title">设备状态</div>
+                </div>
+                <div id="statusDisplay">
+                    <span class="ios-spinner"></span>
+                    <span style="margin-left:8px;color:rgba(255,255,255,0.5)">等待心跳...</span>
+                </div>
+            </div>
+
+            <!-- MQTT状态 -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-icon">📡</div>
+                    <div class="card-title">连接状态</div>
+                </div>
+                <div id="mqttStatus">
+                    <span class="ios-spinner"></span>
+                    <span style="margin-left:8px;color:rgba(255,255,255,0.5)">正在连接...</span>
+                </div>
+            </div>
+
+            <!-- 操作日志 -->
+            <div class="glass-card">
+                <div class="card-header">
+                    <div class="card-icon">📋</div>
+                    <div class="card-title">操作日志</div>
+                </div>
+                <div class="log-container" id="logDisplay">
+                    <p class="log-empty">暂无操作记录</p>
+                </div>
+            </div>
+        </div>
+        <button class="help-fab" onclick="window.open('usage-guide.html', '_blank')">?</button>
+    </div>
+
+    <!-- MQTT.js -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+    <script>
+        const MQTT_BROKER = 'wss://broker-cn.emqx.io:8084/mqtt';
+        let currentDevice = { id: '', token: '' };
+        let mqttClient = null;
+
+        function login() {
+            currentDevice.id = document.getElementById('deviceId').value.trim();
+            currentDevice.token = document.getElementById('token').value.trim();
+
+            if (!currentDevice.id || !currentDevice.token) {
+                alert('请输入设备ID和Token');
+                return;
+            }
+
+            localStorage.setItem('wol_mini_device_id', currentDevice.id);
+            localStorage.setItem('wol_mini_token', currentDevice.token);
+
+            // 切换到控制界面
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('controlPage').classList.remove('hidden');
+
+            connectMQTT();
+            addLog('已连接设备: ' + currentDevice.id);
+        }
+
+        function logout() {
+            if (mqttClient) {
+                mqttClient.end();
+                mqttClient = null;
+            }
+            document.getElementById('controlPage').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
+            currentDevice = { id: '', token: '' };
+            addLog('已退出登录');
+        }
+
+        function connectMQTT() {
+            const clientId = 'web_' + currentDevice.id + '_' + Date.now();
+            mqttClient = mqtt.connect(MQTT_BROKER, {
+                clientId: clientId,
+                clean: true,
+                connectTimeout: 4000,
+                reconnectPeriod: 1000
+            });
+
+            mqttClient.on('connect', () => {
+                document.getElementById('mqttStatus').innerHTML =
+                    '<span class="status-pill status-online"><span class="status-dot"></span>已连接</span>';
+                addLog('<span class="log-success">MQTT连接成功</span>');
+                const statusTopic = 'wol-mini/' + currentDevice.id + '/status';
+                mqttClient.subscribe(statusTopic, { qos: 1 });
+                sendPing();
+            });
+
+            mqttClient.on('message', (topic, message) => {
+                handleMessage(JSON.parse(message.toString()));
+            });
+
+            mqttClient.on('error', (err) => {
+                document.getElementById('mqttStatus').innerHTML =
+                    '<span class="status-pill status-offline"><span class="status-dot"></span>连接失败</span>';
+                addLog('<span class="log-error">错误: ' + err.message + '</span>');
+            });
+
+            mqttClient.on('close', () => {
+                document.getElementById('mqttStatus').innerHTML =
+                    '<span class="status-pill status-offline"><span class="status-dot"></span>已断开</span>';
+            });
+
+            mqttClient.on('reconnect', () => {
+                document.getElementById('mqttStatus').innerHTML =
+                    '<span class="status-pill status-connecting"><span class="status-dot"></span>重连中</span>';
+            });
+        }
+
+        function handleMessage(msg) {
+            if (msg.status === 'online') {
+                let html = '<div class="device-info">';
+                html += '<div class="device-info-row"><span class="device-info-label">设备ID</span><span class="device-info-value">' + msg.device_id + '</span></div>';
+                html += '<div class="device-info-row"><span class="device-info-label">状态</span><span class="status-pill status-online"><span class="status-dot"></span>在线</span></div>';
+                if (msg.ip) html += '<div class="device-info-row"><span class="device-info-label">IP</span><span class="device-info-value">' + msg.ip + '</span></div>';
+                html += '</div>';
+                document.getElementById('statusDisplay').innerHTML = html;
+            }
+            if (msg.result) {
+                if (msg.result === 'success') {
+                    addLog('<span class="log-success">' + msg.action + ' 成功</span>');
+                } else if (msg.result === 'rejected') {
+                    addLog('<span class="log-error">' + msg.action + ' Token错误</span>');
+                }
+            }
+        }
+
+        function sendWake() { publishCommand('wake'); }
+        function sendSleep() { publishCommand('sleep'); }
+        function sendPing() { publishCommand('ping'); }
+
+        function publishCommand(action) {
+            if (!mqttClient || !mqttClient.connected) {
+                alert('MQTT未连接');
+                return;
+            }
+            addLog('发送: ' + action + '...');
+            mqttClient.publish('wol-mini/' + currentDevice.id + '/control', JSON.stringify({
+                action: action,
+                token: currentDevice.token,
+                timestamp: Date.now()
+            }), { qos: 1 });
+        }
+
+        function addLog(msg) {
+            let log = document.getElementById('logDisplay');
+            let time = new Date().toLocaleTimeString();
+            log.innerHTML = '<div class="log-item"><span class="log-time">' + time + '</span><span>' + msg + '</span></div>' + log.innerHTML;
+        }
+
+        // 自动登录：页面加载时检查是否有保存的配置
+        window.onload = function() {
+            const savedId = localStorage.getItem('wol_mini_device_id');
+            const savedToken = localStorage.getItem('wol_mini_token');
+
+            if (savedId) document.getElementById('deviceId').value = savedId;
+            if (savedToken) document.getElementById('token').value = savedToken;
+
+            // 如果有保存的配置，自动登录
+            if (savedId && savedToken) {
+                login();
+            }
+        };
+    </script>
+</body>
+</html>
