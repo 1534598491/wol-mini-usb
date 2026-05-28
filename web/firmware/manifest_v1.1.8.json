@@ -1,6 +1,7 @@
 {
   "name": "WOL-Mini-USB",
   "version": "1.1.8",
+  "erase_before_install": false,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
