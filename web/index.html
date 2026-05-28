@@ -351,13 +351,16 @@
         let mqttClient = null;
 
         function login() {
-            currentDevice.id = document.getElementById('deviceId').value.trim();
+            currentDevice.id = document.getElementById('deviceId').value.trim().toUpperCase();
             currentDevice.token = document.getElementById('token').value.trim();
 
             if (!currentDevice.id || !currentDevice.token) {
                 alert('请输入设备ID和Token');
                 return;
             }
+
+            // 更新输入框显示大写后的ID
+            document.getElementById('deviceId').value = currentDevice.id;
 
             localStorage.setItem('wol_mini_device_id', currentDevice.id);
             localStorage.setItem('wol_mini_token', currentDevice.token);
