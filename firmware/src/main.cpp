@@ -25,7 +25,7 @@
 #include "mbedtls/sha256.h"
 #include <time.h>  // NTP时间同步
 
-const char* FIRMWARE_VERSION = "1.1.4";
+const char* FIRMWARE_VERSION = "1.1.5";
 const char* FIRMWARE_DATE = "2026-05-28";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
@@ -183,14 +183,19 @@ void loadConfig() {
   // 检查激活状态
   isActivated = checkActivation();
 
-  // 如果没有设备ID，生成默认值
+  // 如果没有设备ID，生成默认值（统一大写）
   if (config.deviceId.length() == 0) {
     String mac = WiFi.macAddress();
     mac.replace(":", "");
+    mac.toUpperCase();  // MAC地址转大写
     String macSuffix = mac.substring(mac.length() - 4);
     String defaultName = config.deviceName.length() > 0 ? config.deviceName : "mypc";
+    defaultName.toUpperCase();  // 设备名称转大写
     config.deviceId = defaultName + "-" + macSuffix;
   }
+
+  // 确保设备ID始终为大写
+  config.deviceId.toUpperCase();
 
   Serial.println("Config loaded:");
   Serial.println("  WiFi SSID length: " + String(config.wifiSSID.length()));
@@ -500,8 +505,9 @@ void handleConfigRoot() {
   html += F("使用方式：ESP32插入PC USB口 → 配网 → 打开Web控制页面 → 点击唤醒/睡眠");
   html += F("</div>");
 
-  // 显示MAC地址（用于生成激活码）
+  // 显示MAC地址（用于生成激活码，统一大写）
   String macAddress = WiFi.macAddress();
+  macAddress.toUpperCase();
   html += F("<div class='card' style='background:#1e3a5f'>");
   html += F("<div class='card-title' style='color:#22c55e'>设备信息</div>");
   html += F("<label style='font-size:12px;color:#64748b'>MAC地址（用于生成激活码）</label>");
@@ -520,21 +526,23 @@ void handleConfigRoot() {
   html += F("<input type='password' id='wifi_pass' placeholder='输入WiFi密码'>");
   html += F("</div></div>");
 
-  // 设备配置
+  // 设备配置（统一大写）
   String mac = WiFi.macAddress();
   mac.replace(":", "");
+  mac.toUpperCase();  // MAC转大写
   String macSuffix = mac.substring(mac.length() - 4);
   String defaultName = config.deviceName.length() > 0 ? config.deviceName : "mypc";
+  defaultName.toUpperCase();  // 名称转大写
   String fullId = defaultName + "-" + macSuffix;
 
   html += F("<div class='card'>");
   html += F("<div class='card-title'>设备设置</div>");
-  html += F("<label>设备名称（简单易记）</label>");
+  html += F("<label>设备名称（简单易记，自动转大写）</label>");
   html += "<input id='device_name' value='" + defaultName + "' oninput='updateDeviceId()'>";
-  html += F("<p class='hint'>输入简单名称，如 mypc、office、home</p>");
-  html += F("<label>完整设备ID（自动生成）</label>");
+  html += F("<p class='hint'>输入简单名称，如 MYPC、OFFICE、HOME（自动转为大写）</p>");
+  html += F("<label>完整设备ID（自动生成，全大写）</label>");
   html += "<div id='full_id_display' style='padding:12px;background:#334155;border-radius:8px;color:#22c55e;font-weight:bold'>" + fullId + "</div>";
-  html += F("<p class='hint'>登录Web时需要输入这个完整ID，注意大小写敏感</p>");
+  html += F("<p class='hint'>登录Web时输入此ID（全大写），如: MYPC-150C</p>");
   html += F("</div>");
 
   // 安全设置（Token）
@@ -571,9 +579,10 @@ void handleConfigRoot() {
   html += F("<script>");
   html += "const MAC_SUFFIX = '" + macSuffix + "';";
   html += F("function updateDeviceId(){");
-  html += F("let name=document.getElementById('device_name').value.trim();");
-  html += F("if(name.length==0) name='mypc';");
+  html += F("let name=document.getElementById('device_name').value.trim().toUpperCase();");
+  html += F("if(name.length==0) name='MYPC';");
   html += F("let fullId=name+'-'+MAC_SUFFIX;");
+  html += F("document.getElementById('device_name').value=name;");  // 更新输入框为大写
   html += F("document.getElementById('full_id_display').textContent=fullId;");
   html += F("}");
   html += F("function scanWiFi(){");
@@ -663,7 +672,9 @@ void handleConfigSave() {
   }
 
   config.deviceName = doc["device_name"].as<String>();
+  config.deviceName.toUpperCase();  // 名称转大写
   config.deviceId = doc["device_id"].as<String>();
+  config.deviceId.toUpperCase();    // ID转大写
   config.controlToken = doc["control_token"].as<String>();
 
   // 保存激活码
