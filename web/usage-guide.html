@@ -214,8 +214,8 @@
             <div class="ios-input-group" style="margin-bottom:8px">
                 <label style="font-size:12px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px">选择固件版本</label>
                 <select style="width:100%;padding:10px;background:#fff;border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#333;font-size:14px" id="firmwareVersion" onchange="changeVersion()">
-                    <option value="v1.1.9" style="background:#fff;color:#333">v1.1.9 (睡眠键修复) - 推荐</option>
-                    <option value="v1.1.8" style="background:#fff;color:#333">v1.1.8 (USB远程唤醒修复)</option>
+                    <option value="v1.2.0" style="background:#fff;color:#333">v1.2.0 (恢复简单唤醒逻辑) - 推荐</option>
+                    <option value="v1.1.9" style="background:#fff;color:#333">v1.1.9 (睡眠键修复)</option>
                     <option value="v1.1.6" style="background:#fff;color:#333">v1.1.6 (唤醒优化+按钮反馈)</option>
                     <option value="v1.1.5" style="background:#fff;color:#333">v1.1.5 (设备ID统一大写)</option>
                     <option value="v1.1.4" style="background:#fff;color:#333">v1.1.4 (NTP时间同步+时间戳验证修复)</option>
@@ -238,7 +238,7 @@
                 • <b>Install</b> = 安装固件<br>
                 • <b>Success!</b> = 烧录成功
             </div>
-            <esp-web-install-button id="flashBtn" manifest="./firmware/manifest_v1.1.9.json">
+            <esp-web-install-button id="flashBtn" manifest="./firmware/manifest_v1.2.0.json">
                 <button slot="activate" style="width:100%;padding:14px;background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:600;cursor:pointer">⚡ 浏览器烧录固件</button>
             </esp-web-install-button>
         </div>
