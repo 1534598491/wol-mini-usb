@@ -454,7 +454,7 @@
         function sendSleep() { publishCommand('sleep'); }
         function sendPing() { publishCommand('ping'); }
 
-        function publishCommand(action) {
+        async function publishCommand(action) {
             if (!mqttClient || !mqttClient.connected) {
                 alert('MQTT未连接');
                 return;
@@ -463,7 +463,7 @@
 
             // 使用HMAC签名（Token不传输）
             const timestamp = Math.floor(Date.now() / 1000);
-            const signature = computeHMAC(action + timestamp, currentDevice.token);
+            const signature = await computeHMAC(action + timestamp, currentDevice.token);
 
             mqttClient.publish('wol-mini/' + currentDevice.id + '/control', JSON.stringify({
                 action: action,
