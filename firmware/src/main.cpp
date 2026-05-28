@@ -26,7 +26,10 @@
 #include <time.h>  // NTP时间同步
 extern "C" bool tud_remote_wakeup(void);  // TinyUSB远程唤醒函数
 
-const char* FIRMWARE_VERSION = "1.1.8";
+// USB HID键盘睡眠键（HID Usage ID 0xE1）
+#define KEY_SLEEP 0xE1
+
+const char* FIRMWARE_VERSION = "1.1.9";
 const char* FIRMWARE_DATE = "2026-05-28";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
@@ -955,12 +958,23 @@ void triggerWake() {
 }
 
 void triggerSleep() {
-  // 睡眠：发送System Standby命令
+  // 睡眠：发送键盘Sleep键（0xE1）- 更可靠
   Serial.println("\n=== USB HID Sleep ===");
+
+  // 先尝试键盘Sleep键
+  Serial.println("Sending KEY_SLEEP (keyboard)...");
+  keyboard.press(KEY_SLEEP);
+  delay(100);
+  keyboard.release(KEY_SLEEP);
+
+  // 再尝试System Standby作为备用
+  delay(200);
+  Serial.println("Sending SYSTEM_CONTROL_STANDBY...");
   systemControl.press(SYSTEM_CONTROL_STANDBY);
-  delay(50);
+  delay(100);
   systemControl.release();
-  Serial.println("=== Sleep: System Standby sent ===\n");
+
+  Serial.println("=== Sleep commands sent ===\n");
 }
 
 void triggerWakeOrSleep() {
