@@ -11,10 +11,6 @@
           "offset": 0
         },
         {
-          "path": "partitions.bin",
-          "offset": 32768
-        },
-        {
           "path": "firmware.bin",
           "offset": 65536
         }

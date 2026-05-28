@@ -11,14 +11,11 @@
           "offset": "0x0"
         },
         {
-          "path": "partitions.bin",
-          "offset": "0x8000"
-        },
-        {
           "path": "firmware.bin",
           "offset": "0x10000"
         }
       ]
     }
-  ]
+  ],
+  "erase_before_install": false
 }
