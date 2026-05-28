@@ -300,8 +300,8 @@
                     <div class="card-icon">🎮</div>
                     <div class="card-title">远程控制</div>
                 </div>
-                <button class="ios-btn ios-btn-success" onclick="sendWake()">⚡ 唤醒电脑</button>
-                <button class="ios-btn ios-btn-warning" onclick="sendSleep()">🌙 睡眠电脑</button>
+                <button class="ios-btn ios-btn-success" id="wakeBtn" onclick="sendWake()">⚡ 唤醒电脑</button>
+                <button class="ios-btn ios-btn-warning" id="sleepBtn" onclick="confirmSleep()">🌙 睡眠电脑</button>
                 <button class="ios-btn ios-btn-primary" onclick="sendPing()">🔍 查询状态</button>
             </div>
 
@@ -453,7 +453,44 @@
             }
         }
 
-        function sendWake() { publishCommand('wake'); }
+        function sendWake() {
+            // 显示发送反馈
+            let btn = document.getElementById('wakeBtn');
+            let originalText = btn.innerHTML;
+            btn.innerHTML = '<span class="ios-spinner"></span> 发送中...';
+            btn.disabled = true;
+
+            publishCommand('wake');
+
+            // 2秒后恢复按钮
+            setTimeout(() => {
+                btn.innerHTML = '✅ 已发送';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 1500);
+            }, 800);
+        }
+
+        function confirmSleep() {
+            if (confirm('确定要让电脑进入睡眠状态吗？')) {
+                let btn = document.getElementById('sleepBtn');
+                let originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="ios-spinner"></span> 发送中...';
+                btn.disabled = true;
+
+                publishCommand('sleep');
+
+                setTimeout(() => {
+                    btn.innerHTML = '✅ 已发送';
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 1500);
+                }, 800);
+            }
+        }
+
         function sendSleep() { publishCommand('sleep'); }
         function sendPing() { publishCommand('ping'); }
 

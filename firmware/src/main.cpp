@@ -25,7 +25,7 @@
 #include "mbedtls/sha256.h"
 #include <time.h>  // NTP时间同步
 
-const char* FIRMWARE_VERSION = "1.1.5";
+const char* FIRMWARE_VERSION = "1.1.6";
 const char* FIRMWARE_DATE = "2026-05-28";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
@@ -893,10 +893,27 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 // ===== USB HID触发 =====
 
 void triggerWake() {
-  // 唤醒：发送空格键唤醒睡眠的PC
+  // 唤醒：发送多个按键唤醒睡眠的PC（兼容不同系统）
   Serial.println("\n=== USB HID Wake ===");
-  keyboard.write(' ');
-  Serial.println("=== Wake: Space sent ===\n");
+
+  // 先发送System Wake Up命令（最可靠）
+  systemControl.press(SYSTEM_CONTROL_WAKE_HOST);
+  delay(50);
+  systemControl.release();
+  delay(100);
+
+  // 再发送空格键（备用唤醒）
+  keyboard.press(' ');
+  delay(50);
+  keyboard.release(' ');
+  delay(100);
+
+  // 最后发送回车键（备用唤醒）
+  keyboard.press(KEY_RETURN);
+  delay(50);
+  keyboard.release(KEY_RETURN);
+
+  Serial.println("=== Wake: System Wake Host + Space + Enter sent ===\n");
 }
 
 void triggerSleep() {
