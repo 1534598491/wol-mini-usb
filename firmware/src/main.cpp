@@ -24,8 +24,9 @@
 #include <USBHIDSystemControl.h>
 #include "mbedtls/sha256.h"
 #include <time.h>  // NTP时间同步
+extern "C" bool tud_remote_wakeup(void);  // TinyUSB远程唤醒函数
 
-const char* FIRMWARE_VERSION = "1.1.7";
+const char* FIRMWARE_VERSION = "1.1.8";
 const char* FIRMWARE_DATE = "2026-05-28";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
@@ -59,6 +60,7 @@ struct Config {
 
 bool isActivated = false;  // 激活状态
 bool configMode = false;
+bool usbSuspended = false;  // USB挂起状态（PC睡眠时）
 unsigned long lastHeartbeat = 0;
 unsigned long bootPressStart = 0;
 bool bootPressed = false;
@@ -66,6 +68,7 @@ unsigned long lastWifiReconnect = 0;
 unsigned long bootTime = 0;
 
 // Forward declarations
+void usbEventCallback(void* arg, const char* event_base, int32_t event_id, void* event_data);
 void loadConfig();
 void saveConfig();
 void clearWifiConfig();
@@ -90,11 +93,28 @@ bool is5GHz(int channel);
 bool validateActivationCode(String code);
 bool checkActivation();
 
+// USB事件回调 - 跟踪USB挂起/恢复状态
+void usbEventCallback(void* arg, const char* event_base, int32_t event_id, void* event_data) {
+  arduino_usb_event_data_t* data = (arduino_usb_event_data_t*)event_data;
+  if (event_id == ARDUINO_USB_SUSPEND_EVENT) {
+    usbSuspended = true;
+    Serial.println("USB SUSPEND (PC sleeping)");
+    Serial.print("Remote wakeup enabled: ");
+    Serial.println(data->suspend.remote_wakeup_en ? "YES" : "NO");
+  } else if (event_id == ARDUINO_USB_RESUME_EVENT) {
+    usbSuspended = false;
+    Serial.println("USB RESUME (PC waking up)");
+  }
+}
+
 void setup() {
   // 关键：USB HID必须先初始化（在WiFi之前）
   USB.begin();
   keyboard.begin();
   systemControl.begin();
+
+  // 注册USB事件回调（跟踪挂起状态）
+  USB.onEvent(usbEventCallback);
 
   Serial.begin(115200);
   delay(2000);  // 等待USB CDC就绪
@@ -893,13 +913,29 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 // ===== USB HID触发 =====
 
 void triggerWake() {
-  // 唤醒：发送多个按键唤醒睡眠的PC
+  // 唤醒：先发送USB远程唤醒信号，再发送按键
   Serial.println("\n=== USB HID Wake ===");
 
-  // 增加延时让USB稳定
-  delay(200);
+  // 检查USB是否被挂起（PC睡眠时）
+  if (usbSuspended) {
+    Serial.println("USB suspended, sending remote wakeup signal...");
+    // 发送USB远程唤醒信号
+    bool wakeupResult = tud_remote_wakeup();
+    Serial.print("tud_remote_wakeup result: ");
+    Serial.println(wakeupResult ? "success" : "failed");
 
-  // 发送空格键（使用write方法更可靠）
+    // 等待USB恢复（最多等待3秒）
+    for (int i = 0; i < 30 && usbSuspended; i++) {
+      delay(100);
+      Serial.print(".");
+    }
+    Serial.println();
+
+    // 再等待一小段时间让USB稳定
+    delay(500);
+  }
+
+  // 发送空格键
   Serial.println("Sending Space key...");
   keyboard.write(' ');
   delay(200);
