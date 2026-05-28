@@ -24,8 +24,8 @@
 #include <USBHIDSystemControl.h>
 #include "mbedtls/sha256.h"
 
-const char* FIRMWARE_VERSION = "1.1.2";
-const char* FIRMWARE_DATE = "2026-05-27";
+const char* FIRMWARE_VERSION = "1.1.3";
+const char* FIRMWARE_DATE = "2026-05-28";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
 #define WIFI_RECONNECT_DELAY 5000
@@ -96,7 +96,8 @@ void setup() {
   systemControl.begin();
 
   Serial.begin(115200);
-  Serial.println("\n\n=== WOL-Mini-USB V1.0 ===");
+  delay(2000);  // 等待USB CDC就绪
+  Serial.println("\n\n=== WOL-Mini-USB V1.1.2 ===");
   Serial.println("USB HID initialized");
 
   // 等待USB枚举完成
@@ -191,6 +192,7 @@ void loadConfig() {
   }
 
   Serial.println("Config loaded:");
+  Serial.println("  WiFi SSID length: " + String(config.wifiSSID.length()));
   Serial.println("  WiFi: " + config.wifiSSID);
   Serial.println("  Device Name: " + config.deviceName);
   Serial.println("  Device ID: " + config.deviceId);
@@ -347,8 +349,18 @@ bool is5GHz(int channel) {
 
 void handleWiFiScan() {
   Serial.println("=== SCAN START ===");
-  int num = WiFi.scanNetworks(false, false, false, 300);
+
+  // 临时切换到AP+STA模式以便扫描（保持热点）
+  WiFi.mode(WIFI_AP_STA);
+  delay(100);
+
+  // 扫描参数优化：show_hidden=false, sync=true（阻塞等待结果）
+  int num = WiFi.scanNetworks(false, true);
   Serial.println("Scan result: " + String(num) + " networks");
+
+  // 扫描完成后回到纯AP模式
+  delay(100);
+  WiFi.mode(WIFI_AP);
 
   struct NetworkInfo {
     String ssid;
@@ -412,9 +424,13 @@ void enterConfigMode() {
   configMode = true;
   Serial.println("\n=== ENTER CONFIG MODE ===");
 
+  // 先关闭可能已启动的WebServer
+  configServer.stop();
+  delay(100);
+
   WiFi.disconnect(true);
   delay(500);
-  WiFi.mode(WIFI_AP_STA);
+  WiFi.mode(WIFI_AP);  // 改为纯AP模式
   delay(500);
 
   WiFi.softAP(AP_SSID);
@@ -426,12 +442,19 @@ void enterConfigMode() {
 
   dnsServer.start(53, "*", apIP);
 
+  Serial.println("Registering routes...");
   configServer.on("/", handleConfigRoot);
+  Serial.println("  / registered");
   configServer.on("/scan", handleWiFiScan);
+  Serial.println("  /scan registered");
   configServer.on("/save", HTTP_POST, handleConfigSave);
+  Serial.println("  /save registered");
   configServer.on("/verify_activation", HTTP_POST, handleVerifyActivation);
+  Serial.println("  /verify_activation registered");
   configServer.on("/status", handleStatus);
+  Serial.println("  /status registered");
   configServer.onNotFound(handleConfigRoot);
+  Serial.println("  onNotFound set");
   configServer.begin();
   Serial.println("Web server started");
 }
@@ -531,12 +554,13 @@ void handleConfigRoot() {
   // 验证按钮和结果显示区域
   html += F("<button style='width:100%;padding:10px;background:#3b82f6;border-radius:8px;color:#fff;font-size:14px;cursor:pointer;border:none;margin-top:8px' onclick='verifyActivation()'>验证激活码</button>");
   html += F("<div id='activation_result' style='margin-top:8px;font-size:12px'></div>");
-
+  html += F("<div id='activation_status' style='margin-top:8px;font-size:11px'>");
   if (!isActivated && config.activationCode.length() == 0) {
-    html += F("<p style='color:#f59e0b;font-size:11px;margin-top:8px'>⚠️ 未激活：仅唤醒功能可用</p>");
+    html += F("<p style='color:#f59e0b'>⚠️ 未激活：仅唤醒功能可用</p>");
   } else if (isActivated) {
-    html += F("<p style='color:#22c55e;font-size:11px;margin-top:8px'>✅ 已激活：完整功能可用</p>");
+    html += F("<p style='color:#22c55e'>✅ 已激活：完整功能可用</p>");
   }
+  html += F("</div>");
   html += F("</div>");
 
   html += F("<button class='submit-btn' onclick='saveConfig()'>保存配置</button>");
@@ -581,8 +605,9 @@ void handleConfigRoot() {
   html += F(".then(r=>r.json()).then(d=>{");
   html += F("if(d.valid){");
   html += F("document.getElementById('activation_result').innerHTML='<p style=\"color:#22c55e;font-weight:bold\">✅ 验证成功！激活码正确</p>';");
+  html += F("document.getElementById('activation_status').innerHTML='<p style=\"color:#22c55e\">✅ 已激活：完整功能可用</p>';");
   html += F("}else{");
-  html += F("document.getElementById('activation_result').innerHTML='<p style=\"color:#ef4444;font-weight:bold\">❌ 验证失败！激活码不匹配此设备</p><p style=\"color:#f59e0b;font-size:11px\">提示：激活码与MAC地址绑定，请检查是否输入正确</p>';}");
+  html += F("document.getElementById('activation_result').innerHTML='<p style=\"color:#ef4444;font-weight:bold\">❌ 验证失败！激活码不匹配此设备</p><p style=\"color:#f59e0b;font-size:11px\">提示：激活码与MAC地址绑定，请检查是否输入正确</p>';");
   html += F("}}).catch(e=>{document.getElementById('activation_result').innerHTML='<p style=\"color:#ef4444\">验证失败:'+e+'</p>';});}");
 
   html += F("function saveConfig(){");
