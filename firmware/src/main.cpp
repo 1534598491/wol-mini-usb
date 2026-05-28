@@ -23,8 +23,9 @@
 #include <USBHIDKeyboard.h>
 #include <USBHIDSystemControl.h>
 #include "mbedtls/sha256.h"
+#include <time.h>  // NTP时间同步
 
-const char* FIRMWARE_VERSION = "1.1.3";
+const char* FIRMWARE_VERSION = "1.1.4";
 const char* FIRMWARE_DATE = "2026-05-28";
 #define BOOT_BUTTON_PIN 0
 #define BOOT_PRESS_TIME 5000
@@ -748,6 +749,24 @@ void setupNormalMode() {
   if (WiFi.status() == WL_CONNECTED) {
     Serial.println("\nWiFi connected! IP: " + WiFi.localIP().toString());
 
+    // NTP时间同步（用于时间戳验证）
+    configTime(8 * 3600, 0, "ntp.aliyun.com", "ntp.tencent.com", "pool.ntp.org");
+    Serial.println("NTP时间同步配置完成");
+
+    // 等待时间同步（最多5秒）
+    time_t now;
+    for (int i = 0; i < 10; i++) {
+      time(&now);
+      if (now > 1000000000) {
+        Serial.println("NTP同步成功: " + String(now));
+        break;
+      }
+      delay(500);
+    }
+    if (now < 1000000000) {
+      Serial.println("NTP同步失败，将跳过时间戳验证");
+    }
+
     configServer.on("/status", handleStatus);
     configServer.begin();
     Serial.println("HTTP server started");
@@ -811,9 +830,17 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   // 不打印签名，保持安全
 
   // 时间戳验证（防止重放攻击）
-  long currentTimestamp = millis() / 1000;
-  if (abs(currentTimestamp - timestamp) > 300) {  // 5分钟有效期
+  // 使用真实时间（需要NTP同步）
+  time_t now;
+  time(&now);
+  long currentTimestamp = now;
+
+  // 如果NTP未同步（时间为0），跳过时间戳验证
+  if (currentTimestamp < 1000000000) {
+    Serial.println("NTP未同步，跳过时间戳验证");
+  } else if (abs(currentTimestamp - timestamp) > 300) {  // 5分钟有效期
     Serial.println("时间戳过期，拒绝执行");
+    Serial.println("当前: " + String(currentTimestamp) + " 收到: " + String(timestamp));
     sendResult(action.c_str(), "rejected", "timestamp_expired");
     return;
   }
